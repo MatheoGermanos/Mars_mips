@@ -1,0 +1,72 @@
+.data
+	numPrompt:       .asciiz "Enter a number: "
+	fib_result_msg:  .asciiz "Fibonacci result: "
+	num:             .word 0
+	result:          .word 0
+
+.text
+.globl main
+main:
+    	li $v0, 4                  # Print string syscall
+    	la $a0, numPrompt          # Load address of numPrompt
+    	syscall                    # Make syscall (print string)
+
+   	# Read number
+    	li $v0, 5                  # Read integer syscall
+    	syscall                    # Make syscall (read integer)
+    	sw $v0, num                # Store user input
+
+    	lw $a0, num                # Load input into $a0
+    	jal fib                    # Call fib function
+
+    	sw $v0, result              # Store result in memory
+
+    	# Print the result message
+    	li $v0, 4
+    	la $a0, fib_result_msg
+    	syscall                    
+
+    	# Print the Fibonacci result
+    	li $v0, 1
+    	lw $a0, result
+    	syscall
+
+    	# Exit the program
+    	li $v0, 10                 # Exit syscall
+    	syscall                    
+
+#-------------------------------------------------------------------------------------------------------------------------
+
+fib:
+    	# Base cases
+    	blez $a0, fib_base_case      # If $a0 <= 0, return 0
+    	beq  $a0, 1, fib_base_case   # If $a0 == 1, return 1
+
+    	# Save registers and allocate stack space
+    	subu $sp, $sp, 16
+    	sw   $ra, 0($sp)
+    	sw   $s0, 4($sp)
+    	sw   $s1, 8($sp)
+
+    	move $s0, $a0             # Store $a0 in $s0
+    	subu $a0, $s0, 1          # Compute fib(n-1)
+    	jal  fib
+    	move $s1, $v0             # Save fib(n-1) result
+
+    	subu $a0, $s0, 2          # Compute fib(n-2)
+    	jal  fib
+
+    	add  $v0, $s1, $v0        # fib(n) = fib(n-1) + fib(n-2)
+
+    	# Restore registers and deallocate stack space
+    	lw   $ra, 0($sp)
+    	lw   $s0, 4($sp)
+    	lw   $s1, 8($sp)
+    	addi $sp, $sp, 16
+    	jr   $ra                   # Return to caller
+
+fib_base_case:
+    	move $v0, $a0              # Return 0 if n = 0, or 1 if n = 1
+    	jr   $ra
+
+	

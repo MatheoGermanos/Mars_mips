@@ -1,0 +1,171 @@
+.data
+	#-----------------------------------------------------  General  ------------------------------------------------------------------
+	menu:       		.asciiz "\nSelect an operation:\n1. Fibonacci\n2. Factorial\n3. Check Positive or Negative\n4. Exit \nChoice: "
+	numPrompt: 		.asciiz "Enter a number: "
+	num:    		.word 0
+	result:		.word 0
+	
+	#-----------------------------------------------------  Factorial  ------------------------------------------------------------------
+	fact_result_msg: 	.asciiz "Factorial result: "
+	#-----------------------------------------------------  Fibonacci  ------------------------------------------------------------------
+	fib_result_msg:  .asciiz "Fibonacci result: "
+	#-----------------------------------------------------  Check Sign  ------------------------------------------------------------------
+	posMsg:     		.asciiz "The number is positive.\n"
+	negMsg:     		.asciiz "The number is negative.\n"
+
+.text
+.globl main
+main:
+    	# Print menu
+    	li 	$v0, 4
+    	la 	$a0, menu
+    	syscall
+
+    	# Get Choice
+    	li 	$v0, 5
+    	syscall
+    	move 	$t0, $v0
+
+    	beq 	$t0, 4, exit
+    	beq	$t0, 1, fib_choice
+    	beq 	$t0, 2, fact_choice
+    	beq 	$t0, 3, check_sign	
+    	
+#-----------------------------------------------------  Get Number  ------------------------------------------------------------------
+User_num:
+	li 	$v0, 4       		# Load syscall code for print string
+    	la	$a0, numPrompt          # Load address of numPrompt
+    	syscall                    	# Make syscall (print string)
+
+   	# Read number
+    	li 	$v0, 5                  # Load syscall code for read integer
+    	syscall                    	# Make syscall (read integer)
+	sw 	$v0,num
+	jr 	$ra
+	
+#-----------------------------------------------------  Fibonacci  ------------------------------------------------------------------
+fib_choice:
+	jal User_num
+	
+	lw 	$a0,num
+    	jal 	fib                  # Call factorial function
+    	sw 	$v0,result
+    
+    	# Print the result (after factorial computation)
+    	li 	$v0, 4
+    	la 	$a0,fib_result_msg
+    	syscall                    
+    
+    	li 	$v0, 1
+    	lw 	$a0,result
+    	syscall
+    
+    	# Exit the program
+    	j 	main
+	
+fib:
+    	# Base cases
+    	blez $a0, fib_base_case      # If $a0 <= 0, return 0
+    	beq  $a0, 1, fib_base_case   # If $a0 == 1, return 1
+
+    	# Save registers and allocate stack space
+    	subu $sp, $sp, 16
+    	sw   $ra, 0($sp)
+    	sw   $s0, 4($sp)
+    	sw   $s1, 8($sp)
+
+    	move $s0, $a0             # Store $a0 in $s0
+    	subu $a0, $s0, 1          # Compute fib(n-1)
+    	jal  fib
+    	move $s1, $v0             # Save fib(n-1) result
+
+    	subu $a0, $s0, 2          # Compute fib(n-2)
+    	jal  fib
+
+    	add  $v0, $s1, $v0        # fib(n) = fib(n-1) + fib(n-2)
+
+    	# Restore registers and deallocate stack space
+    	lw   $ra, 0($sp)
+    	lw   $s0, 4($sp)
+    	lw   $s1, 8($sp)
+    	addi $sp, $sp, 16
+    	jr   $ra                   # Return to caller
+
+
+fib_base_case:
+    	move $v0, $a0              # Return 0 if n = 0, or 1 if n = 1
+    	jr   $ra
+    	
+    	
+#-----------------------------------------------------  Factorial  ------------------------------------------------------------------
+fact_choice:
+	jal User_num
+    
+    	lw 	$a0,num
+    	jal 	fact                   # Call factorial function
+    	sw 	$v0,result
+    
+    	# Print the result (after factorial computation)
+    	li 	$v0, 4
+    	la 	$a0,fact_result_msg
+    	syscall                    
+    
+    	li 	$v0, 1
+    	lw 	$a0,result
+    	syscall
+    
+    	# Exit the program
+    	j 	main
+    
+fact:
+	subu 	$sp,$sp,8
+	sw 	$ra,0($sp)
+	sw 	$s0,4($sp)
+	
+	# Base Case
+	li 	$v0,1
+	beq 	$a0,0,fact_end
+	
+	# fact(n-1)
+	move 	$s0,$a0
+	sub 	$a0,$a0,1
+	jal 	fact
+	
+	#when func is returned from recursion
+	mul 	$v0,$s0,$v0
+	
+	
+
+fact_end:
+	lw	$ra,0($sp)
+	lw	$s0,4($sp)
+	addu	$sp,$sp,8
+	
+	jr 	$ra
+
+	
+#-----------------------------------------------------  Check Sign  ------------------------------------------------------------------
+check_sign:
+	jal User_num                   	# Make syscall (read integer)
+	lw	$s0,num
+    	bge 	$s0, 0, positive
+    	j 	negative
+
+positive:
+    	li 	$v0, 4
+    	la 	$a0, posMsg
+    	syscall
+    	j 	main
+
+negative:
+    	li 	$v0, 4
+    	la 	$a0, negMsg
+    	syscall
+    	j 	main
+
+
+		
+#-----------------------------------------------------  Exit  ------------------------------------------------------------------
+exit:
+    	li 	$v0, 10                 # Load syscall code for exit
+    	syscall                    	# Make syscall (exit)

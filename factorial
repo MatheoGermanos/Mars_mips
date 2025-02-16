@@ -1,0 +1,78 @@
+.data
+	numPrompt: 		.asciiz "Enter a number: "
+	fact_result_msg: 	.asciiz "Factorial result: "
+	fact_num:    		.word 0
+	fact_result:		.word 0
+
+.text
+.globl main
+main:
+    	li $v0, 4                  # Load syscall code for print string
+    	la $a0, numPrompt          # Load address of numPrompt
+    	syscall                    # Make syscall (print string)
+
+   	# Read number
+    	li $v0, 5                  # Load syscall code for read integer
+    	syscall                    # Make syscall (read integer)
+    
+    	sw $v0,fact_num
+    
+    	lw $a0,fact_num
+    	jal fact                   # Call factorial function
+    	sw $v0,fact_result
+    
+    	# Print the result (after factorial computation)
+    	li $v0, 4
+    	la $a0,fact_result_msg
+    	syscall                    
+    
+    	li $v0, 1
+    	lw $a0,fact_result
+    	syscall
+    
+    	# Exit the program
+    	li $v0, 10                 # Load syscall code for exit
+    	syscall                    # Make syscall (exit)
+
+#-------------------------------------------------------------------------------------------------------------------------
+
+fact:
+	subu 	$sp,$sp,8
+	sw 	$ra,0($sp)
+	sw 	$s0,4($sp)
+	
+	# Base Case
+	li 	$v0,1
+	beq 	$a0,0,fact_end
+	
+	# fact(n-1)
+	move 	$s0,$a0
+	sub 	$a0,$a0,1
+	jal 	fact
+	
+	#when func is returned from recursion
+	mul 	$v0,$s0,$v0
+	
+	
+
+fact_end:
+	lw	$ra,0($sp)
+	lw	$s0,4($sp)
+	addu	$sp,$sp,8
+	
+	jr 	$ra
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+    
